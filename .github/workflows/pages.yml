@@ -1,0 +1,37 @@
+name: Uelsen Masters veröffentlichen
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+      - name: App-Dateien zusammensetzen
+        run: |
+          cat site.part-* > site.zip
+          echo 'fb71ffb790328d447e4d0bd92e5501770bb44e6994a79a8fc9238cdc44b5d074  site.zip' | sha256sum -c -
+          unzip -q site.zip -d _site
+          test -f _site/index.html
+          test -f _site/sw.js
+      - name: GitHub Pages vorbereiten
+        uses: actions/configure-pages@v5
+      - name: App hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: App veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v5
